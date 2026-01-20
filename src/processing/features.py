@@ -1,27 +1,44 @@
+"""
+Module: Real Estate Feature Extractor
+Author: [Your Name]
+Description:
+    Parses unstructured text descriptions from real estate listings to extract
+    structured binary features (Amenities) using Regular Expressions (NLP).
+
+    This module is part of the ETL pipeline, bridging the gap between raw web-scraped
+    data and the Machine Learning model.
+"""
+
 import pandas as pd
-import re
-import unicodedata
+import logging
+import os
+from pathlib import Path
+
+# Configure Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 class FeatureExtractor:
     """
-    Componente encargado de transformar texto no estructurado (descripciones)
-    en variables binarias (0/1) para modelos de Machine Learning.
+    Extracts binary amenities (0/1) from text descriptions.
     """
 
     def __init__(self):
-        # Definimos los patrones Regex para cada feature.
-        # \b asegura que buscamos palabras completas.
-        # (?i) hace que sea insensible a mayúsculas/minúsculas.
-        self.patterns = {
+        # Define Regex Patterns (Case Insensitive)
+        # Note: We use Spanish keywords because the raw data is in Spanish.
+        self.amenity_patterns = {
             'has_security': [
-                r'vigilancia', r'seguridad', r'cctv',
-                r'control de acceso', r'port[oó]n el[eé]ctrico',
-                r'caseta', r'guardia', r'circuito cerrado'
+                r'vigilancia', r'seguridad', r'cctv', r'control de acceso',
+                r'port[oó]n el[eé]ctrico', r'caseta', r'guardia',
+                r'circuito cerrado', r'privada'
             ],
             'has_garden': [
                 r'jard[ií]n', r'patio trasero', r'amplio patio',
-                r'areas? verdeg?s?', r'huerto'
+                r'[aá]reas? verdeg?s?', r'huerto', r'paisajismo'
             ],
             'has_pool': [
                 r'alberca', r'piscina', r'carril de nado',
@@ -29,76 +46,119 @@ class FeatureExtractor:
             ],
             'has_terrace': [
                 r'terraza', r'roof garden', r'balc[oó]n',
-                r'asador', r'palapa'
+                r'asador', r'palapa', r'solarium'
             ],
-            'is_new': [
+            'has_gym': [
+                r'gimnasio', r'gym', r'ejercitadores'
+            ],
+            'is_new_property': [
                 r'preventa', r'entrega inmediata', r'estrenar',
-                r'acabados de lujo', r'nueva etapa'
+                r'acabados de lujo'
+            ],
+            'has_kitchen': [
+                r'cocina integral', r'cocina equipada', r'granito'
             ]
         }
 
-    def _normalize_text(self, text: str) -> str:
-        """Limpia el texto para facilitar la búsqueda."""
-        if not isinstance(text, str):
-            return ""
-        # Convertir a minúsculas y normalizar acentos (opcional, pero útil)
-        text = text.lower()
-        # Normalización unicode para tratar 'á' igual que 'a' si quisieras ser estricto,
-        # pero mis regex ya contemplan acentos.
-        return text
-
-    def process(self, df: pd.DataFrame, text_column: str = 'description') -> pd.DataFrame:
+    def _normalize_text(self, series: pd.Series) -> pd.Series:
         """
-        Aplica la extracción de features al DataFrame dado.
-        Retorna el DataFrame original con las nuevas columnas agregadas.
+        Normalizes text: lowercase, fills NA, removes special chars if needed.
         """
-        print(f"--- Iniciando Extracción de Features en {len(df)} registros ---")
+        return series.fillna("").astype(str).str.lower()
 
-        # Trabajamos sobre una copia para no alterar el original inmediatamente
+    def transform(self, df: pd.DataFrame, text_col: str = 'description') -> pd.DataFrame:
+        """
+        Main method to apply transformations.
+
+        Args:
+            df (pd.DataFrame): Raw dataframe containing the text column.
+            text_col (str): The name of the column to parse.
+
+        Returns:
+            pd.DataFrame: DataFrame with new binary columns attached.
+        """
+        if text_col not in df.columns:
+            raise ValueError(f"Column '{text_col}' not found in DataFrame.")
+
+        logger.info(f"Starting feature extraction on {len(df)} records...")
+
+        # Working on a copy to avoid SettingWithCopy warnings
         df_out = df.copy()
 
-        # Llenar nulos por si acaso
-        search_space = df_out[text_column].fillna("").apply(self._normalize_text)
+        # Pre-process text once for efficiency
+        search_space = self._normalize_text(df_out[text_col])
 
-        for feature_name, keywords in self.patterns.items():
-            # Creamos una expresión regular unificada: (palabra1|palabra2|palabra3)
-            # Esto es mucho más rápido que iterar palabra por palabra
+        # Iterating through the dictionary of patterns
+        for feature, keywords in self.amenity_patterns.items():
+            # Create a single compiled regex pattern: (word1|word2|word3)
+            # This is significantly faster than looping through keywords.
             regex_pattern = '|'.join(keywords)
 
-            print(f"   > Extrayendo: {feature_name}...")
+            # Vectorized search
+            df_out[feature] = search_space.str.contains(
+                regex_pattern, case=False, regex=True
+            ).astype(int)
 
-            # Aplicamos la búsqueda vectorizada (muy rápido en Pandas)
-            df_out[feature_name] = search_space.str.contains(regex_pattern, case=False, regex=True).astype(int)
+            count = df_out[feature].sum()
+            logger.info(f"  > Feature '{feature}': Detected in {count} listings ({count / len(df):.1%})")
 
-        # Lógica de corrección específica (Business Rules)
-        # Ejemplo: Si dice "Patio de servicio" NO cuenta como Jardín (Falso positivo común)
-        # Aquí usamos una máscara negativa para corregir
-        mask_service_patio = search_space.str.contains(r'patio de servicio|patio de lavado', regex=True)
-        # Solo restamos si la única razón por la que es 1 fue por la palabra "patio" genérica.
-        # (Esta lógica se puede refinar, por ahora lo mantendremos simple).
+        # --- BUSINESS LOGIC CORRECTIONS ---
+        # Fix 1: "Patio de servicio" (Laundry area) is NOT a Garden.
+        # We check if 'has_garden' is 1, but the text explicitly mentions service patio.
 
-        print("--- Extracción Finalizada ---\n")
+        # Define mask for service patio
+        mask_service_patio = search_space.str.contains(r'patio de (servicio|lavado|tendido)', regex=True)
+
+        # If it has garden AND matches service patio pattern, we need to be careful.
+        # We only remove it if it DOESN'T match strong garden keywords (like 'jardin' or 'areas verdes').
+        mask_strong_garden = search_space.str.contains(r'jard[ií]n|areas? verdeg?s?', regex=True)
+
+        # Logic: If it has "Patio" but also "Patio de servicio" and NO "Jardin", set to 0.
+        correction_mask = (df_out['has_garden'] == 1) & (mask_service_patio) & (~mask_strong_garden)
+
+        n_corrected = correction_mask.sum()
+        if n_corrected > 0:
+            df_out.loc[correction_mask, 'has_garden'] = 0
+            logger.info(f"  > Applied Logic Fix: Removed 'Patio de servicio' false positives from {n_corrected} rows.")
+
+        logger.info("Feature extraction completed successfully.")
         return df_out
 
 
-# --- BLOQUE DE PRUEBA (Para correrlo ya mismo) ---
+# --- EXECUTION BLOCK ---
 if __name__ == "__main__":
-    # Datos falsos para probar tu lógica mientras esperas al scraper
-    mock_data = {
-        'id': [1, 2, 3, 4],
-        'price': [100, 200, 300, 400],
-        'description': [
-            "Casa en venta con vigilancia 24/7 y amplia cocina.",
-            "Hermoso departamento con Roof Garden y alberca compartida.",
-            "Terreno listo para construir.",
-            "Casa con jardín trasero y patio de servicio."
-        ]
-    }
+    # Define paths
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+    INPUT_FILE = BASE_DIR / "data" / "raw" / "real_estate_queretaro_dataset.csv"
+    OUTPUT_FILE = BASE_DIR / "data" / "processed" / "real_estate_enriched.csv"
 
-    df_mock = pd.DataFrame(mock_data)
+    # Check if file exists
+    if not INPUT_FILE.exists():
+        logger.error(f"Input file not found: {INPUT_FILE}")
+        # Create dummy data for demonstration if file is missing
+        logger.warning("Generating DUMMY data for testing...")
+        data = {
+            'price': [100, 200, 300],
+            'description': [
+                "Casa con vigilancia y alberca",
+                "Terreno amplio",
+                "Departamento con patio de servicio y cocina integral"
+            ]
+        }
+        df_raw = pd.DataFrame(data)
+    else:
+        logger.info(f"Loading data from: {INPUT_FILE}")
+        df_raw = pd.read_csv(INPUT_FILE)
 
+    # Initialize and Transform
     extractor = FeatureExtractor()
-    df_enriched = extractor.process(df_mock)
+    try:
+        df_processed = extractor.transform(df_raw)
 
-    print("Resultados de la prueba:")
-    print(df_enriched[['description', 'has_security', 'has_pool', 'has_garden', 'has_terrace']])
+        # Save output
+        os.makedirs(OUTPUT_FILE.parent, exist_ok=True)
+        df_processed.to_csv(OUTPUT_FILE, index=False)
+        logger.info(f"Data saved to: {OUTPUT_FILE}")
+
+    except Exception as e:
+        logger.critical(f"Pipeline failed: {e}")
