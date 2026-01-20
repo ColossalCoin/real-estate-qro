@@ -12,7 +12,7 @@ CHROME_PATH = r"C:/chrome-win64/chrome.exe"
 BASE_URL_ROOT = "https://www.vivanuncios.com.mx/s-casas-en-venta/queretaro/"
 URL_SUFFIX = "v1c1293l1021p"
 OUTPUT_DIR = "data/raw"
-OUTPUT_FILENAME = "real_estate_queretaro_dataset_v2.csv"  # Changed name to avoid overwriting v1
+OUTPUT_FILENAME = "real_estate_queretaro_dataset_v2.csv"  # Changed name to avoid overwriting
 
 
 class RealEstateScraper:
