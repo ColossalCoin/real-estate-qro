@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     if not INPUT_FILE.exists():
         logger.error(f"Input file not found: {INPUT_FILE}")
-        logger.info("Please run the scraper (engine.py) first to generate data.")
+        logger.info("Please run the scraper (main_scraper.py) first to generate data.")
     else:
         logger.info(f"Loading raw data from: {INPUT_FILE}")
         df_raw = pd.read_csv(INPUT_FILE)
