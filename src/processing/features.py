@@ -1,6 +1,4 @@
 """
-Module: Real Estate Feature Extractor
-Author: [Your Name]
 Description:
     Parses unstructured text descriptions from real estate listings to extract
     structured binary features (Amenities) using Regular Expressions (NLP).
@@ -135,30 +133,19 @@ if __name__ == "__main__":
     # Check if file exists
     if not INPUT_FILE.exists():
         logger.error(f"Input file not found: {INPUT_FILE}")
-        # Create dummy data for demonstration if file is missing
-        logger.warning("Generating DUMMY data for testing...")
-        data = {
-            'price': [100, 200, 300],
-            'description': [
-                "Casa con vigilancia y alberca",
-                "Terreno amplio",
-                "Departamento con patio de servicio y cocina integral"
-            ]
-        }
-        df_raw = pd.DataFrame(data)
     else:
         logger.info(f"Loading data from: {INPUT_FILE}")
         df_raw = pd.read_csv(INPUT_FILE)
 
-    # Initialize and Transform
-    extractor = FeatureExtractor()
-    try:
-        df_processed = extractor.transform(df_raw)
+        # Initialize and Transform
+        extractor = FeatureExtractor()
+        try:
+            df_processed = extractor.transform(df_raw)
 
-        # Save output
-        os.makedirs(OUTPUT_FILE.parent, exist_ok=True)
-        df_processed.to_csv(OUTPUT_FILE, index=False)
-        logger.info(f"Data saved to: {OUTPUT_FILE}")
+            # Save output
+            os.makedirs(OUTPUT_FILE.parent, exist_ok=True)
+            df_processed.to_csv(OUTPUT_FILE, index=False)
+            logger.info(f"Data saved to: {OUTPUT_FILE}")
 
-    except Exception as e:
-        logger.critical(f"Pipeline failed: {e}")
+        except Exception as e:
+            logger.critical(f"Pipeline failed: {e}")
