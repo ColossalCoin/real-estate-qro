@@ -40,7 +40,12 @@ CREATE OR REPLACE TABLE `real-estate-qro.queretaro_data_warehouse.fact_context_c
 SELECT
   GENERATE_UUID() AS crime_id,
   
-  UPPER(TRIM(municipio)) AS municipio_name,
+  UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+                 CASE WHEN UPPER(municipio) LIKE '%BONFIL%' THEN 'AMEALCO DE BONFIN'
+                      ELSE TRIM(municipio)
+                 END,
+    'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U'), 'Ñ', 'N')
+  ) AS municipality_join_key,
   delito AS crime_type,
   SAFE_CAST(tasa AS FLOAT64) AS crime_rate,
   PARSE_DATE('%Y-%m-%d', CONCAT(fecha, '-01')) AS reference_date
