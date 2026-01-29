@@ -88,11 +88,11 @@ SELECT
 FROM raw_listings l
 
 -- JOIN 1: Connect to the deduplicated dictionary of neighborhoods
-LEFT JOIN deduplicated_neighborhoods n
+INNER JOIN deduplicated_neighborhoods n
   ON l.join_address_key = n.unique_key
 
 -- JOIN 2: Spatial Grid
-LEFT JOIN `real-estate-qro.queretaro_data_warehouse.dim_geo_grid_polygons` g
+INNER JOIN `real-estate-qro.queretaro_data_warehouse.dim_geo_grid_polygons` g
   ON ST_CONTAINS(g.grid_geom, n.neighborhood_point)
 
 -- FINAL SAFETY NET (Optional but recommended)
