@@ -45,7 +45,7 @@ SELECT
                       ELSE TRIM(municipio)
                  END,
     'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U'), 'Ñ', 'N')
-  ) AS municipality_join_key,
+  ) AS municipality_name,
   delito AS crime_type,
   SAFE_CAST(tasa AS FLOAT64) AS crime_rate,
   PARSE_DATE('%Y-%m-%d', CONCAT(fecha, '-01')) AS reference_date
