@@ -80,8 +80,9 @@ SELECT
   -- Now we get the clean, trimmed name (e.g., "Jurica" without spaces)
   n.official_neighborhood_name,
   n.neighborhood_point AS listing_geom,
-  
+
   g.grid_id,
+  g.municipality_name AS official_municipality,
   
   l.processed_date
 
