@@ -23,11 +23,14 @@ SELECT
   -- using COALESCE to fallback to a UUID if ID is missing.
   COALESCE(
     JSON_VALUE(geo_raw, '$.properties.id'), 
-    GENERATE_UUID() 
+    GENERATE_UUID()
   ) AS grid_id,
 
   -- Geometry Parsing
-  ST_GEOGFROMGEOJSON(JSON_QUERY(geo_raw, '$.geometry'), make_valid => true) AS grid_geom
+  ST_GEOGFROMGEOJSON(JSON_QUERY(geo_raw, '$.geometry'), make_valid => true) AS polygon_geom,
+
+  -- Municipality Name Extraction
+  UPPER(TRIM(JSON_VALUE(geo_raw, '$.properties.NAME_2'))) AS municipality_name
 
 FROM `real-estate-qro.queretaro_staging.geo_grid_mosaics`
 WHERE geo_raw IS NOT NULL;
