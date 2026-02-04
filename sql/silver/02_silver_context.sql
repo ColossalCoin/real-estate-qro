@@ -38,7 +38,7 @@ WHERE longitude IS NOT NULL AND latitude IS NOT NULL AND category IS NOT NULL;
 
 CREATE OR REPLACE TABLE `real-estate-qro.queretaro_data_warehouse.fact_context_crime` AS
 SELECT
-  GENERATE_UUID() AS crime_id,
+  GENERATE_UUID() AS id,
   
   UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
                  CASE WHEN UPPER(municipio) LIKE '%BONFIL%' THEN 'AMEALCO DE BONFIN'
@@ -46,6 +46,7 @@ SELECT
                  END,
     'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U'), 'Ñ', 'N')
   ) AS municipality_name,
+  id_delito AS crime_id,
   delito AS crime_type,
   SAFE_CAST(tasa AS FLOAT64) AS crime_rate,
   PARSE_DATE('%Y-%m-%d', CONCAT(fecha, '-01')) AS reference_date
