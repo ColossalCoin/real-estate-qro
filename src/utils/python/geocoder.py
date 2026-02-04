@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(BASE_DIR))
 
 try:
-    from src.utils.clean_text import AddressCleaner
+    from src.utils.python.clean_text import AddressCleaner
 except ImportError:
     from clean_text import AddressCleaner
 

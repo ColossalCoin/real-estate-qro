@@ -21,7 +21,7 @@ sys.path.append(str(BASE_DIR))
 
 # Import the AddressCleaner helper
 try:
-    from src.utils.clean_text import AddressCleaner
+    from src.utils import AddressCleaner
 except ImportError:
     sys.path.append(str(BASE_DIR / "src" / "utils"))
     from clean_text import AddressCleaner
