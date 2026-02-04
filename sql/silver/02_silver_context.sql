@@ -46,7 +46,7 @@ SELECT
                  END,
     'Á', 'A'), 'É', 'E'), 'Í', 'I'), 'Ó', 'O'), 'Ú', 'U'), 'Ñ', 'N')
   ) AS municipality_name,
-  UPPER(delito) AS crime_type,
+  delito AS crime_type,
   SAFE_CAST(tasa AS FLOAT64) AS crime_rate,
   PARSE_DATE('%Y-%m-%d', CONCAT(fecha, '-01')) AS reference_date
 
