@@ -23,9 +23,6 @@ crime_features AS (
   SELECT
     municipality_name,
 
-    -- TOTAL CRIME VOLUME
-    SUM(crime_rate) AS total_crimes_period,
-
     -- SPECIFIC CRIME FEATURES
     SUM(CASE WHEN crime_id = 4200 THEN crime_rate ELSE 0 END) AS feat_crime_residential,
     SUM(CASE WHEN crime_id = 4100 THEN crime_rate ELSE 0 END) AS feat_crime_vehicle,
@@ -91,7 +88,6 @@ SELECT
   -- 5. SAFETY CONTEXT (Derived from Crime Join)
   -- We use COALESCE(x, 0) because if a municipality has NO crime records,
   -- the Join returns NULL. We treat this as 0 crimes (safest).
-  COALESCE(c.total_crimes_period, 0) AS feat_crime_total,
   COALESCE(c.feat_crime_residential, 0) AS feat_crime_residential,
   COALESCE(c.feat_crime_vehicle, 0) AS feat_crime_vehicle,
   COALESCE(c.feat_crime_street, 0) AS feat_crime_street,
