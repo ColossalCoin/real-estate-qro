@@ -30,9 +30,9 @@ WITH
 -- We filter out listings without valid coordinates to avoid calculation errors.
 target_listings AS (
     SELECT
-        amenity_id,
-        amenity_geom
-    FROM `real-estate-qro.queretaro_data_warehouse.dim_context_amenities`
+        listing_id,
+        listing_geom
+    FROM `real-estate-qro.queretaro_data_warehouse.fact_listings_cleaned`
 ),
 
 -- 2. Get Context Amenities (Points of Interest)
@@ -47,30 +47,30 @@ context_amenities AS (
 -- We calculate the exact distance only for amenities within the 5km buffer.
 nearby_features AS (
     SELECT
-        L.amenity_id,
+        L.listing_id,
         A.type,
-        ST_DISTANCE(L.amenity_geom, A.amenity_geom) as distance_meters
+        ST_DISTANCE(L.listing_geom, A.amenity_geom) as distance_meters
     FROM target_listings L
     JOIN context_amenities A
     -- ST_DWITHIN leverages BigQuery's S2 geometry indexing for speed
-    ON ST_DWITHIN(L.amenity_geom, A.amenity_geom, 5000)
+    ON ST_DWITHIN(L.listing_geom, A.amenity_geom, 5000)
 ),
 
 -- 4. Find Minimum Distance per Type
 -- If there are 3 schools nearby, we only care about the closest one.
 closest_features AS (
     SELECT
-        amenity_id,
+        listing_id,
         type,
         MIN(distance_meters) as min_distance
     FROM nearby_features
-    GROUP BY amenity_id, type
+    GROUP BY listing_id, type
 )
 
 -- 5. Pivot and Impute (Final Assembly)
 -- Transform rows (types) into columns (features) and apply the 5000m cap for nulls.
 SELECT
-    L.amenity_id,
+    L.listing_id,
 
     -- Education
     COALESCE(MAX(CASE WHEN type = 'education_school' THEN min_distance END), 5000) AS dist_school,
@@ -96,5 +96,5 @@ SELECT
     CURRENT_TIMESTAMP() as created_at
 
 FROM target_listings L
-LEFT JOIN closest_features C ON L.amenity_id = C.amenity_id
-GROUP BY L.amenity_id;
+LEFT JOIN closest_features C ON L.listing_id = C.listing_id
+GROUP BY L.listing_id;

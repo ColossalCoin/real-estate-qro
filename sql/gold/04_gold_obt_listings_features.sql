@@ -42,7 +42,7 @@ crime_features AS (
 -------------------------------------------------------------------------- */
 geo_amenities AS (
   SELECT
-    amenity_id,
+    listing_id,
     dist_school,
     dist_university,
     dist_hospital,
@@ -132,4 +132,4 @@ LEFT JOIN crime_features c
 
 -- JOIN 2: GEO AMENITIES (Left Join usando ID de listing)
 LEFT JOIN geo_amenities g
-  ON l.listing_id = g.amenity_id;
+  ON l.listing_id = g.listing_id;
