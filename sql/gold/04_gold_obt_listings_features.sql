@@ -132,7 +132,7 @@ SELECT
   -- the Join returns NULL. We treat this as 0 crimes (safest).
   COALESCE(c.feat_crime_residential, 0) AS feat_crime_residential,
   COALESCE(c.feat_crime_vehicle, 0) AS feat_crime_vehicle,
-  COALESCE(c.feat_crime_passerby, 0) AS feat_crime_street,
+  COALESCE(c.feat_crime_passerby, 0) AS feat_crime_passerby,
   COALESCE(c.feat_crime_homicide, 0) AS feat_crime_homicide,
   COALESCE(c.feat_crime_injuries, 0) AS feat_crime_injueries,
   COALESCE(c.feat_crime_drug_dealing, 0) AS feat_crime_drug_dealing,
