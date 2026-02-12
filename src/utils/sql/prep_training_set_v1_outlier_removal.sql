@@ -34,7 +34,7 @@ SELECT
   feat_crime_passerby
     + feat_crime_residential
     + feat_crime_vehicle
-    + feat_crime_violent as feat_crime_consolidated
+    + feat_crime_violent AS feat_crime_consolidated
 
 FROM `real-estate-qro.queretaro_data_marts.obt_listings_valuation_features`
 
