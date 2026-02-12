@@ -4,7 +4,7 @@
    Note: Log transformation is NOT applied here to allow for "Raw" scenario testing.
    ========================================================================== */
 
-CREATE OR REPLACE VIEW `real-estate-qro.obt_listing_features.view_training_data_cleaned` AS
+CREATE OR REPLACE VIEW `real-estate-qro.queretaro_data_marts.view_training_data_cleaned` AS
 
 SELECT
   listing_id,
@@ -14,27 +14,28 @@ SELECT
   target_price,
 
   -- PHYSICAL FEATURES
-  feat_m2_constructed,
-  feat_m2_terrain,
   feat_bedrooms,
   feat_bathrooms,
   feat_parking_spots,
-  feat_is_new,
+  feat_m2_constructed,
+  feat_has_garden,
 
   -- AMENITIES
-  feat_has_security,
-  feat_has_garden,
-  feat_has_pool,
-  feat_has_gym,
-  feat_has_kitchen,
-  feat_has_terrace,
+  feat_dist_center,
+  feat_dist_supermarket,
+  feat_dist_park,
 
   -- LOCATION
   feat_municipality,
   feat_neighborhood,
 
   -- CRIME CONTEXT
-  feat_crime_residential
+  feat_crime_homicide,
+  feat_crime_passerby
+    + feat_crime_residential
+    + feat_crime_vehicle
+    + feat_crime_violent
+
 
 FROM `real-estate-qro.queretaro_data_marts.obt_listings_valuation_features`
 
